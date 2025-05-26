@@ -24,5 +24,5 @@ A simple web-based application to log, track, and visualize income and expense t
 ### 1. Clone or Download the Repository
 
 ```bash
-git clone 
+git clone https://github.com/Katliegh/Hackaton.git
 cd storefront-tracker
