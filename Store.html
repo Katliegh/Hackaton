@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Storefront Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Storefront Income & Expense Tracker</h1>
+    </header>
+    <div class="container">
+        <h2>Log Transaction</h2>
+        <label>Transaction Type:</label>
+        <select id="transactionType">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+        </select>
+        <br />
+        <input type="text" id="amount" placeholder="Enter amount" />
+        <br />
+        <button onclick="logTransaction()">Save</button>
+        <button onclick="clearEntries()">Clear</button>
+
+        <h2>Transaction Summary</h2>
+        <p id="summary">Total Income: 0 | Total Expense: 0</p>
+        <p id="profit">Profit: 0</p>
+
+        <h2>Transaction History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="transactionTableBody">
+                <!-- Transactions go here -->
+            </tbody>
+        </table>
+
+        <h2>Monthly Profit Chart</h2>
+        <canvas id="profitChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let transactionCount = 0;
+        const monthlyData = {};
+        let chartInstance;
+
+        function logTransaction() {
+            const type = document.getElementById("transactionType").value;
+            const amountInput = document.getElementById("amount");
+            const amount = parseFloat(amountInput.value);
+
+            if (!isNaN(amount) && amount > 0) {
+                transactionCount++;
+                const now = new Date();
+                const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { income: 0, expense: 0 };
+                }
+
+                if (type === "income") {
+                    totalIncome += amount;
+                    monthlyData[monthKey].income += amount;
+                } else {
+                    totalExpense += amount;
+                    monthlyData[monthKey].expense += amount;
+                }
+
+                updateSummary();
+                addTransactionToTable(transactionCount, type, amount);
+                updateChart();
+                amountInput.value = '';
+            } else {
+                alert("Please enter a valid positive number.");
+            }
+        }
+
+        function updateSummary() {
+            const profit = totalIncome - totalExpense;
+
+            document.getElementById("summary").textContent =
+                `Total Income: ${totalIncome.toFixed(2)} | Total Expense: ${totalExpense.toFixed(2)}`;
+
+            const profitEl = document.getElementById("profit");
+            profitEl.textContent = `Profit: ${profit.toFixed(2)}`;
+
+            if (profit > 0) {
+                profitEl.style.color = "green";
+            } else if (profit < 0) {
+                profitEl.style.color = "red";
+            } else {
+                profitEl.style.color = "black";
+            }
+        }
+
+        function addTransactionToTable(index, type, amount) {
+            const tableBody = document.getElementById("transactionTableBody");
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = index;
+            row.insertCell(1).textContent = type.charAt(0).toUpperCase() + type.slice(1);
+            row.insertCell(2).textContent = amount.toFixed(2);
+        }
+
+        function clearEntries() {
+            totalIncome = 0;
+            totalExpense = 0;
+            transactionCount = 0;
+            document.getElementById("amount").value = '';
+            document.getElementById("transactionTableBody").innerHTML = '';
+            document.getElementById("summary").textContent = 'Total Income: 0 | Total Expense: 0';
+            document.getElementById("profit").textContent = 'Profit: 0';
+            document.getElementById("profit").style.color = 'black';
+            for (let key in monthlyData) {
+                delete monthlyData[key];
+            }
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+        }
+
+        function updateChart() {
+            const labels = Object.keys(monthlyData).sort();
+            const profits = labels.map(month => {
+                const data = monthlyData[month];
+                return (data.income - data.expense).toFixed(2);
+            });
+
+            const ctx = document.getElementById("profitChart").getContext("2d");
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Profit',
+                        data: profits,
+                        backgroundColor: profits.map(p => p >= 0 ? 'green' : 'red'),
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
